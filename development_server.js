@@ -13,10 +13,13 @@
 //  Aachen, Germany
 //
 var express = require( 'express' );
+var http = require( 'http' );
+var socketIo = require( 'socket.io' );
 var optimist = require( 'optimist' );
+
+var page_reloader = require( './page_reloader' );
 var static_server = require( './static_server' );
 var directory_tree_provider = require( './directory_tree_provider' );
-
 
 var argv = optimist
    .usage( 'Starts a development web server.\n' +
@@ -24,11 +27,18 @@ var argv = optimist
       '       The export-dir argument can be given multiple times for different directories' )
    .demand( [ 'web-dir' ] )
    .describe( 'web-dir', 'The directory to serve' )
+   .describe( 'entry-file', 'If given reloading code is injected in its body' )
+   .describe( 'watch-dir', 'A directory to watch for changes and reload <entry-file> if necessary' )
    .describe( 'export-dir', 'A directory to serve as http://localhost:<port>/var/listing/<directory>' )
    .describe( 'port', 'The port to start the server with' )
    .default( { port: 8666 } )
    .argv;
+
 var app = express();
+var server = http.createServer( app );
+var io = socketIo.listen( server );
+io.set( 'log level', 1 /* 0: error, 1: warn, 2: info, 3: debug */ );
+
 var port = argv.port;
 var rootDir = argv['web-dir'].replace( /\/$/, '' );
 var exportDirs = [];
@@ -42,14 +52,25 @@ if( argv[ 'export-dir' ] ) {
    }
 }
 
-console.log( argv );
+var watchDirs = [];
+if( argv[ 'watch-dir' ] ) {
+   if( typeof argv[ 'watch-dir' ] === 'string' ) {
+      watchDirs = [ argv[ 'watch-dir' ] ];
+   }
+   else {
+      // assume it is an array provided by optimist
+      watchDirs = argv[ 'watch-dir' ];
+   }
+}
+var entryFile = argv[ 'entry-file' ];
+
+app.set( 'io', io );
+app.set( 'port', port );
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 console.log( 'Started with pid ' + process.pid );
 console.log( 'Using root directory %s and port %s', rootDir, port );
-
-static_server.start( app, rootDir );
 
 exportDirs.forEach( function( dir ) {
    dir = dir.replace( /^\//, '' );
@@ -59,4 +80,10 @@ exportDirs.forEach( function( dir ) {
    } );
 } );
 
-app.listen( port );
+if( entryFile && watchDirs.length > 0 ) {
+   page_reloader.start( app, rootDir, entryFile, watchDirs );
+}
+
+static_server.start( app, rootDir );
+
+server.listen( port );
