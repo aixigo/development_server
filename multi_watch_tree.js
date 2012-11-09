@@ -18,7 +18,6 @@ exports.watchTree = watchTree;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 var dirsToCallbacks_ = {};
 function watchTree( dir, callback ) {
    if( !( dir in dirsToCallbacks_ ) ) {
@@ -27,8 +26,12 @@ function watchTree( dir, callback ) {
 
       fsWatchTree.watchTree( dir, function( event ) {
          dirsToCallbacks_[ dir ].forEach( function( cb ) {
-            console.log( "--" + cb.name );
-            cb( event );
+            try {
+               cb( event );
+            }
+            catch( e ) {
+               console.error( 'Exception while delivering fs-watch event: ', e );
+            }
          } );
       } );
    }
