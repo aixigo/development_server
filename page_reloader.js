@@ -79,7 +79,7 @@ function injectReloadingCode( req, res ) {
 function createInjectionCode() {
    return '<script src="/socket.io/socket.io.js"></script>\n' +
       '<script>\n' +
-      'var socket = io.connect( "http://localhost" );\n' +
+      'var socket = io.connect( "http://" + location.host );\n' +
       'socket.on( "reload", function ( data ) {\n' +
       '   location.reload();\n' +
       '} );\n' +
