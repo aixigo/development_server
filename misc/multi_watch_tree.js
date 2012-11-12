@@ -12,14 +12,34 @@
 //  http://www.aixigo.de
 //  Aachen, Germany
 //
-var express = require( 'express' );
+/*jshint strict:false*//*global exports*/
+var fsWatchTree = require( 'fs-watch-tree' );
 
-exports.start = start;
+exports.watchTree = watchTree;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function start( app, fileRoot ) {
+var dirsToCallbacks_ = {};
+function watchTree( dir, callback ) {
+   if( !( dir in dirsToCallbacks_ ) ) {
 
-   app.use( express.static( fileRoot ) );
+      dirsToCallbacks_[ dir ] = [];
 
+      var options = {
+         exclude: [ "node_modules", /^\./ ]
+      };
+
+      fsWatchTree.watchTree( dir, options, function( event ) {
+         dirsToCallbacks_[ dir ].forEach( function( cb ) {
+            try {
+               cb( event );
+            }
+            catch( e ) {
+               console.error( 'Exception while delivering fs-watch event: ', e );
+            }
+         } );
+      } );
+   }
+
+   dirsToCallbacks_[ dir ].push( callback );
 }

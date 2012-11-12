@@ -12,9 +12,10 @@
 //  http://www.aixigo.de
 //  Aachen, Germany
 //
+/*jshint strict:false*//*global exports,console*/
 var Q = require( 'q' );
 var fs = require( 'fs' );
-var fsWatchTree = require( './multi_watch_tree' );
+var fsWatchTree = require( './../misc/multi_watch_tree' );
 
 exports.start = start;
 

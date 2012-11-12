@@ -12,28 +12,21 @@
 //  http://www.aixigo.de
 //  Aachen, Germany
 //
+/*jshint strict:false*//*global exports,process,console*/
 var express = require( 'express' );
 var http = require( 'http' );
 var socketIo = require( 'socket.io' );
-var optimist = require( 'optimist' );
 
-var page_reloader = require( './page_reloader' );
-var static_server = require( './static_server' );
-var directory_tree_provider = require( './directory_tree_provider' );
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// read arguments
-
-var argv = resolveArgv( optimist );
-var port = argv.port;
-var rootDir = argv['web-dir'].replace( /\/$/, '' );
-var exportDirs = resolvePossibleArrayArgument( argv, 'export-dir' );
-var watchDirs = resolvePossibleArrayArgument( argv, 'watch-dir' );
-var entryFile = argv[ 'entry-file' ];
+var argumentResolver = require( './misc/arguments_resolver' );
+var pageReloader = require( './plugins/page_reloader' );
+var staticServer = require( './plugins/static_server' );
+var directoryTreeProvider = require( './plugins/directory_tree_provider' );
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // setup application
 
+var rootDir = argumentResolver.get( 'rootDir' );
+var port = argumentResolver.get( 'port' );
 var app = express();
 var server = http.createServer( app );
 var io = socketIo.listen( server );
@@ -56,45 +49,10 @@ console.log( 'Using root directory %s and port %s', rootDir, port );
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // start helpers
 
-directory_tree_provider.start( app, rootDir, exportDirs );
+directoryTreeProvider.start( app, rootDir, argumentResolver.get( 'exportDirs' ) );
 
-page_reloader.start( app, rootDir, entryFile, watchDirs );
+pageReloader.start( app, rootDir, argumentResolver.get( 'entryFile' ), argumentResolver.get( 'watchDirs' ) );
 
-static_server.start( app, rootDir );
+staticServer.start( app, rootDir );
 
 server.listen( port );
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-function resolvePossibleArrayArgument( argv, key ) {
-   if( !argv[ key ] ) {
-      return [];
-   }
-
-   if( typeof argv[ key ] === 'string' ) {
-      return [ argv[ key ] ];
-   }
-   else {
-      // assume it is an array provided by optimist
-      return argv[ key ];
-   }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-function resolveArgv( optimist ) {
-   var opt = optimist
-      .usage( 'Starts a development web server.\n' +
-      'Usage: $0 --web-dir=<path>\n' +
-      '       The export-dir argument can be given multiple times for different directories' )
-      .demand( [ 'web-dir' ] )
-      .describe( 'web-dir', 'The directory to serve' )
-      .describe( 'entry-file', 'If given reloading code is injected in its body' )
-      .describe( 'watch-dir', 'A directory to watch for changes and reload <entry-file> if necessary' )
-      .describe( 'export-dir', 'A directory to serve as http://localhost:<port>/var/listing/<directory>' )
-      .describe( 'port', 'The port to start the server with' );
-
-   opt[ 'default' ]( { port: 8666 } );
-
-   return opt.argv;
-}
