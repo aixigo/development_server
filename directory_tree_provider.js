@@ -22,24 +22,18 @@ exports.getInstance = getInstance;
 
 function getInstance( rootDirectory, subDirectory ) {
    var watchedDirectory = rootDirectory + '/' + subDirectory;
-
-   var fileTree = [];
-   var currTree = fileTree;
-   subDirectory.split( '/' ).forEach( function( dir ) {
-      currTree.push( {
-         ignored: true,
-         name: dir,
-         children: []
-      } );
-      currTree = currTree[ 0 ].children;
-   } );
+   var fileTree;
 
    function updateFileTreeCache() {
-      currTree.splice( 0, currTree.length );
+      fileTree = {};
+      var currTree = initWithSubDirectory( subDirectory, fileTree );
+
       buildTree( watchedDirectory ).then( function( tree ) {
-         tree.forEach( function( item ) {
-            currTree.push( item );
-         } );
+         for( var key in tree ) {
+            if( tree.hasOwnProperty( key ) ) {
+               currTree[ key ] = tree[ key ];
+            }
+         }
       } );
    }
    updateFileTreeCache();
@@ -55,9 +49,20 @@ function getInstance( rootDirectory, subDirectory ) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+function initWithSubDirectory( subDirectory, fileTree ) {
+   var currTree = fileTree;
+   subDirectory.split( '/' ).forEach( function( dir ) {
+      currTree[ dir ] = {};
+      currTree = currTree[ dir ];
+   } );
+   return currTree;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 function buildTree( path ) {
    var deferred = Q.defer();
-   var tree = [];
+   var tree = {};
 
    fs.readdir( path, function( err, files ) {
       if( err ) {
@@ -78,16 +83,12 @@ function buildTree( path ) {
 
             if( stat.isDirectory() ) {
                buildTree( fullPath ).then( function( subDir ) {
-                  var subtree = {
-                     name: dir,
-                     children: subDir
-                  };
-                  tree.push( subtree );
+                  tree[ dir ] = subDir;
                   dirDeferred.resolve();
                } );
             }
             else if( stat.isFile() ) {
-               tree.push( dir );
+               tree[ dir ] = 'file';
                dirDeferred.resolve();
             }
             else {

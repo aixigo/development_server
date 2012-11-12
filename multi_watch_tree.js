@@ -24,7 +24,11 @@ function watchTree( dir, callback ) {
 
       dirsToCallbacks_[ dir ] = [];
 
-      fsWatchTree.watchTree( dir, function( event ) {
+      var options = {
+         exclude: [ "node_modules", /^\./ ]
+      };
+
+      fsWatchTree.watchTree( dir, options, function( event ) {
          dirsToCallbacks_[ dir ].forEach( function( cb ) {
             try {
                cb( event );

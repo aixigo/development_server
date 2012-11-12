@@ -23,8 +23,8 @@ var directory_tree_provider = require( './directory_tree_provider' );
 
 var argv = optimist
    .usage( 'Starts a development web server.\n' +
-      'Usage: $0 --web-dir=<path>\n' +
-      '       The export-dir argument can be given multiple times for different directories' )
+   'Usage: $0 --web-dir=<path>\n' +
+   '       The export-dir argument can be given multiple times for different directories' )
    .demand( [ 'web-dir' ] )
    .describe( 'web-dir', 'The directory to serve' )
    .describe( 'entry-file', 'If given reloading code is injected in its body' )
@@ -41,6 +41,9 @@ io.set( 'log level', 1 /* 0: error, 1: warn, 2: info, 3: debug */ );
 
 var port = argv.port;
 var rootDir = argv['web-dir'].replace( /\/$/, '' );
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 var exportDirs = [];
 if( argv[ 'export-dir' ] ) {
    if( typeof argv[ 'export-dir' ] === 'string' ) {
@@ -51,6 +54,8 @@ if( argv[ 'export-dir' ] ) {
       exportDirs = argv[ 'export-dir' ];
    }
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var watchDirs = [];
 if( argv[ 'watch-dir' ] ) {
@@ -64,8 +69,19 @@ if( argv[ 'watch-dir' ] ) {
 }
 var entryFile = argv[ 'entry-file' ];
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 app.set( 'io', io );
 app.set( 'port', port );
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+app.use( function( req, res, next ) {
+   res.header( 'Cache-Control', 'no-cache' );
+   res.header( 'Expires', 'Fri, 31 Dec 1998 12:00:00 GMT' );
+
+   next();
+} );
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
