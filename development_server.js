@@ -21,85 +21,80 @@ var page_reloader = require( './page_reloader' );
 var static_server = require( './static_server' );
 var directory_tree_provider = require( './directory_tree_provider' );
 
-var argv = optimist
-   .usage( 'Starts a development web server.\n' +
-   'Usage: $0 --web-dir=<path>\n' +
-   '       The export-dir argument can be given multiple times for different directories' )
-   .demand( [ 'web-dir' ] )
-   .describe( 'web-dir', 'The directory to serve' )
-   .describe( 'entry-file', 'If given reloading code is injected in its body' )
-   .describe( 'watch-dir', 'A directory to watch for changes and reload <entry-file> if necessary' )
-   .describe( 'export-dir', 'A directory to serve as http://localhost:<port>/var/listing/<directory>' )
-   .describe( 'port', 'The port to start the server with' )
-   .default( { port: 8666 } )
-   .argv;
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// read arguments
+
+var argv = resolveArgv( optimist );
+var port = argv.port;
+var rootDir = argv['web-dir'].replace( /\/$/, '' );
+var exportDirs = resolvePossibleArrayArgument( argv, 'export-dir' );
+var watchDirs = resolvePossibleArrayArgument( argv, 'watch-dir' );
+var entryFile = argv[ 'entry-file' ];
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// setup application
 
 var app = express();
 var server = http.createServer( app );
 var io = socketIo.listen( server );
+
 io.set( 'log level', 1 /* 0: error, 1: warn, 2: info, 3: debug */ );
-
-var port = argv.port;
-var rootDir = argv['web-dir'].replace( /\/$/, '' );
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-var exportDirs = [];
-if( argv[ 'export-dir' ] ) {
-   if( typeof argv[ 'export-dir' ] === 'string' ) {
-      exportDirs = [ argv[ 'export-dir' ] ];
-   }
-   else {
-      // assume it is an array provided by optimist
-      exportDirs = argv[ 'export-dir' ];
-   }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-var watchDirs = [];
-if( argv[ 'watch-dir' ] ) {
-   if( typeof argv[ 'watch-dir' ] === 'string' ) {
-      watchDirs = [ argv[ 'watch-dir' ] ];
-   }
-   else {
-      // assume it is an array provided by optimist
-      watchDirs = argv[ 'watch-dir' ];
-   }
-}
-var entryFile = argv[ 'entry-file' ];
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 app.set( 'io', io );
 app.set( 'port', port );
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 app.use( function( req, res, next ) {
+   // during development caching is prevented
    res.header( 'Cache-Control', 'no-cache' );
    res.header( 'Expires', 'Fri, 31 Dec 1998 12:00:00 GMT' );
 
    next();
 } );
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 console.log( 'Started with pid ' + process.pid );
 console.log( 'Using root directory %s and port %s', rootDir, port );
 
-exportDirs.forEach( function( dir ) {
-   dir = dir.replace( /^\//, '' );
-   var widgetDirectoryTreeProvider = directory_tree_provider.getInstance( rootDir, dir );
-   app.get( '/var/listing/' + dir.replace( /\//g, '_' ) + '.json', function( req, res ) {
-      res.json( widgetDirectoryTreeProvider.getTree() );
-   } );
-} );
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// start helpers
 
-if( entryFile && watchDirs.length > 0 ) {
-   page_reloader.start( app, rootDir, entryFile, watchDirs );
-}
+directory_tree_provider.start( app, rootDir, exportDirs );
+
+page_reloader.start( app, rootDir, entryFile, watchDirs );
 
 static_server.start( app, rootDir );
 
 server.listen( port );
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function resolvePossibleArrayArgument( argv, key ) {
+   if( !argv[ key ] ) {
+      return [];
+   }
+
+   if( typeof argv[ key ] === 'string' ) {
+      return [ argv[ key ] ];
+   }
+   else {
+      // assume it is an array provided by optimist
+      return argv[ key ];
+   }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function resolveArgv( optimist ) {
+   var opt = optimist
+      .usage( 'Starts a development web server.\n' +
+      'Usage: $0 --web-dir=<path>\n' +
+      '       The export-dir argument can be given multiple times for different directories' )
+      .demand( [ 'web-dir' ] )
+      .describe( 'web-dir', 'The directory to serve' )
+      .describe( 'entry-file', 'If given reloading code is injected in its body' )
+      .describe( 'watch-dir', 'A directory to watch for changes and reload <entry-file> if necessary' )
+      .describe( 'export-dir', 'A directory to serve as http://localhost:<port>/var/listing/<directory>' )
+      .describe( 'port', 'The port to start the server with' );
+
+   opt[ 'default' ]( { port: 8666 } );
+
+   return opt.argv;
+}

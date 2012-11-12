@@ -16,7 +16,24 @@ var Q = require( 'q' );
 var fs = require( 'fs' );
 var fsWatchTree = require( './multi_watch_tree' );
 
-exports.getInstance = getInstance;
+exports.start = start;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function start( app, rootDir, exportDirs ) {
+   if( !exportDirs.length ) {
+      console.log( 'no export dirs given' );
+      return;
+   }
+
+   exportDirs.forEach( function( dir ) {
+      dir = dir.replace( /^\//, '' );
+      var widgetDirectoryTreeProvider = getInstance( rootDir, dir );
+      app.get( '/var/listing/' + dir.replace( /\//g, '_' ) + '.json', function( req, res ) {
+         res.json( widgetDirectoryTreeProvider.getTree() );
+      } );
+   } );
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

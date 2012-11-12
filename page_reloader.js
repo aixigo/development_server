@@ -23,6 +23,11 @@ var rootDir_;
 var entryFile_;
 var sockets_ = {};
 function start( app, rootDir, entryFile, watchedDirs ) {
+   if( !entryFile || !watchedDirs.length ) {
+      console.log( 'no watched dirs or entry file given' );
+      return;
+   }
+
    rootDir_ = rootDir;
    entryFile_ = entryFile;
 
