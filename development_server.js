@@ -13,6 +13,14 @@
 //  Aachen, Germany
 //
 /*jshint strict:false*//*global exports,process,console*/
+
+
+require( './misc/extended_amd_loader' ).config( {
+   paths: {
+      'lib/': '../../../includes/lib/'
+   }
+} );
+
 var express = require( 'express' );
 var http = require( 'http' );
 var socketIo = require( 'socket.io' );
