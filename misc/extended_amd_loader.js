@@ -12,7 +12,7 @@
 //  http://www.aixigo.de
 //  Aachen, Germany
 //
-/*jshint strict:false*//*global exports*/
+/*jshint strict:false*//*global exports,global*/
 var amdLoader = require( 'amd-loader' );
 
 exports.config = config;
