@@ -38,6 +38,9 @@ function start( app, rootDir, entryFile, watchedDirs ) {
 
    app.get( '/' + entryFile.replace( /^\//, '' ), injectReloadingCode );
 
+   // NEEDS FIX B: This should be configurable as well.
+   app.get( /(.+)\/(spec_runner\.html)$/, injectReloadingCode );
+
    app.get( 'io' ).sockets.on( 'connection', function( socket ) {
       sockets_[ socket.id ] = socket;
       socket.on( 'disconnect', function() {
@@ -74,7 +77,14 @@ function injectReloadingCode( req, res ) {
          return;
       }
 
-      var html = String( data ).replace( '</head>', createInjectionCode() + '</head>' );
+      var html = String( data ).replace( /(<head[^>]*>)([\S\s]*)(<\/head>)/igm,
+                                         function( match, headStart, headContent, headEnd ) {
+         if( headContent.indexOf( '<script' ) === -1 ) {
+            return headStart + headContent + '\n' + createInjectionCode() + headEnd;
+         }
+
+         return headStart +  headContent.replace( '<script', createInjectionCode() + '<script' ) + headEnd;
+      } );
       res.type( 'text/html' );
       res.send( html );
    } );
