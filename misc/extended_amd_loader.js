@@ -12,23 +12,34 @@
 //  http://www.aixigo.de
 //  Aachen, Germany
 //
-/*jshint strict:false*//*global exports,global*/
+/*jshint strict:false*//*global exports,global,__dirname*/
 var amdLoader = require( 'amd-loader' );
+var path = require( 'path' );
 
 exports.config = config;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var configuration_ = {};
+var configuredFromDir_;
 
 function config( configuration ) {
-   configuration_ = configuration;
+   configuration_ = {
+      baseUrl: configuration.baseUrl || __dirname,
+      paths: {}
+   };
+   configuredFromDir_ = __dirname;
+
+   Object.keys( configuration.paths ).forEach( function( source ) {
+      configuration_.paths[ source ] = path.normalize( configuration_.baseUrl + '/' + configuration.paths[ source ] );
+   } );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var amdDefine = global.define;
-global.define = function( id, injects, definition ) {
+global.define = function define( id, injects, definition ) {
+
    if( typeof injects === 'function' ) {
       definition = injects;
       injects = id;
@@ -40,6 +51,7 @@ global.define = function( id, injects, definition ) {
       id = null;
    }
 
+   // First we extend the amd loader to allow for RequireJS path configurations.
    if( configuration_.paths ) {
       injects = injects.map( function( injection ) {
          for( var prefix in configuration_.paths ) {
@@ -55,10 +67,13 @@ global.define = function( id, injects, definition ) {
       } );
    }
 
+   // Second we prevent it from shifting our expected arguments.
+   injects.unshift = injects.push;
+
    var args = [ injects, definition ];
    if( id ) {
       args.splice( 0, 0, id );
    }
 
-   return amdDefine.apply( {}, args );
+   amdDefine.apply( global, args );
 };

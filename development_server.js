@@ -12,10 +12,11 @@
 //  http://www.aixigo.de
 //  Aachen, Germany
 //
-/*jshint strict:false*//*global exports,process,console*/
+/*jshint strict:false*//*global exports,process,console,__dirname*/
 
 
 require( './misc/extended_amd_loader' ).config( {
+   baseUrl: __dirname,
    paths: {
       'lib/': '../../../includes/lib/'
    }
@@ -29,6 +30,7 @@ var argumentResolver = require( './misc/arguments_resolver' );
 var pageReloader = require( './plugins/page_reloader' );
 var staticServer = require( './plugins/static_server' );
 var directoryTreeProvider = require( './plugins/directory_tree_provider' );
+var portalAngularDependencyProvider = require( './plugins/portal_angular_dependency_provider' );
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // setup application
@@ -59,7 +61,9 @@ console.log( 'Using root directory %s and port %s', rootDir, port );
 
 directoryTreeProvider.start( app, rootDir, argumentResolver.get( 'exportDirs' ) );
 
-pageReloader.start( app, rootDir, argumentResolver.get( 'entryFile' ), argumentResolver.get( 'watchDirs' ) );
+portalAngularDependencyProvider.start( app, rootDir, argumentResolver.get( 'flowFile' ), argumentResolver.get( 'angularDependenciesFile' ) );
+
+pageReloader.start( app, rootDir, argumentResolver.get( 'reloadFiles' ), argumentResolver.get( 'watchDirs' ) );
 
 staticServer.start( app, rootDir );
 

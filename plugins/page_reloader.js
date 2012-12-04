@@ -21,25 +21,29 @@ exports.start = start;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var rootDir_;
-var entryFile_;
 var sockets_ = {};
-function start( app, rootDir, entryFile, watchedDirs ) {
-   if( !entryFile || !watchedDirs.length ) {
-      console.log( 'no watched dirs or entry file given' );
+function start( app, rootDir, reloadFiles, watchedDirs ) {
+   if( !reloadFiles || !reloadFiles.length || !watchedDirs.length ) {
+      console.log( 'no watched dirs or reload file given' );
       return;
    }
 
    rootDir_ = rootDir;
-   entryFile_ = entryFile;
 
    watchedDirs.forEach( function( dir ) {
       fsWatchTree.watchTree( rootDir + '/' + dir.replace( /^\//, '' ), handleFileChanged );
    } );
 
-   app.get( '/' + entryFile.replace( /^\//, '' ), injectReloadingCode );
+   app.use( function( req, res, next ) {
+      for( var i = 0; i < reloadFiles.length; ++i ) {
+         if( stringEndsWith( req.url, '/' + reloadFiles[ i ] ) ) {
+            injectReloadingCode( req, res );
+            return;
+         }
+      }
 
-   // NEEDS FIX B: This should be configurable as well.
-   app.get( /(.+)\/(spec_runner\.html)$/, injectReloadingCode );
+      next();
+   } );
 
    app.get( 'io' ).sockets.on( 'connection', function( socket ) {
       sockets_[ socket.id ] = socket;
@@ -100,4 +104,10 @@ function createInjectionCode() {
       '   location.reload();\n' +
       '} );\n' +
       '</script>';
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function stringEndsWith( str, suffix ) {
+   return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
