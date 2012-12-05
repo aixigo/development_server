@@ -21,6 +21,7 @@ require( './misc/extended_amd_loader' ).config( {
       'lib/': '../../../includes/lib/'
    }
 } );
+require( '../../../includes/lib/json/extended_json' );
 
 var express = require( 'express' );
 var http = require( 'http' );
