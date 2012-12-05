@@ -62,6 +62,9 @@ console.log( 'Using root directory %s and port %s', rootDir, port );
 directoryTreeProvider.start( app, rootDir, argumentResolver.get( 'exportDirs' ) );
 
 portalAngularDependencyProvider.start( app, rootDir, argumentResolver.get( 'flowFile' ), argumentResolver.get( 'angularDependenciesFile' ) );
+portalAngularDependencyProvider.createDependencyFile( function() {
+   console.log( 'Created %s', argumentResolver.get( 'angularDependenciesFile' ) );
+} );
 
 pageReloader.start( app, rootDir, argumentResolver.get( 'reloadFiles' ), argumentResolver.get( 'watchDirs' ) );
 

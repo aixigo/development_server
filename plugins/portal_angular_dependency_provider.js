@@ -17,24 +17,42 @@ var Q = require( 'q' );
 var fs = require( 'fs' );
 
 exports.start = start;
+exports.createDependencyFile = createDependencyFile;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+var webRootPath_;
+var flowFile_;
+var outputPath_;
+
 function start( app, webRootPath, flowFile, outputPath ) {
-   webRootPath += '/';
-   app.get( '/' + outputPath, function( req, res ) {
-      createDependencyFile( webRootPath, flowFile, function( response ) {
+   webRootPath_ = webRootPath + '/';
+   flowFile_ = flowFile;
+   outputPath_ = outputPath;
+
+   app.get( '/' + outputPath_, function( req, res ) {
+      generateJavaScripteCode( webRootPath_, flowFile_, function( response ) {
          res.set( 'Content-Type', 'application/javascript' );
          res.end( response );
 
-         fs.writeFileSync(  webRootPath + outputPath, response );
+
+         writeFile( response );
       } );
    } );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function createDependencyFile( webRootPath, flowFile, callback ) {
+function createDependencyFile( callback ) {
+   generateJavaScripteCode( webRootPath_, flowFile_, function( response ) {
+      writeFile( response );
+      callback();
+   } );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function generateJavaScripteCode( webRootPath, flowFile, callback ) {
    var widgetCollector = require( webRootPath + '/includes/lib/portal_assembler/widget_collector' );
    widgetCollector.init( Q, httpClient() );
 
@@ -57,6 +75,28 @@ function createDependencyFile( webRootPath, flowFile, callback ) {
 
       callback( response );
    } );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function writeFile( data ) {
+   var fullPath = webRootPath_ + outputPath_;
+   var path = fullPath.substr( 0, fullPath.lastIndexOf( '/' ) );
+
+   ensureDirectory( path );
+
+   fs.writeFileSync( fullPath, data );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function ensureDirectory( dir ) {
+   if( fs.existsSync( dir ) ) {
+      return;
+   }
+
+   // NEEDS FIX C: this is not 'mkdir -p' but for now we can be sure 'var' exists and thus only 'static' needs to be created
+   fs.mkdirSync( dir );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
