@@ -26,10 +26,28 @@ function get( optionalKey ) {
    }
 
    if( optionalKey ) {
-      return args_[ optionalKey ];
+      if( optionalKey.indexOf( '.' ) === -1 ) {
+         return args_[ optionalKey ];
+      }
+
+      return resolveNestedValue( optionalKey.split( '.' ), args_ );
    }
 
    return args_;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function resolveNestedValue( keyArr, conf ) {
+   var node = conf;
+   for( var i = 0, len = keyArr.length; i < len; ++i ) {
+      if( !( keyArr[ i ] in node ) ) {
+         return null;
+      }
+
+      node = node[ keyArr[ i ] ];
+   }
+   return node;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,18 +59,6 @@ function assembleConfiguration() {
       args = require( argv[ 'config-file' ] );
    }
 
-   [ 'port', 'entry-file' ].forEach( function( key ) {
-      if( key in argv ) {
-         args[ key ] = argv[ key ];
-      }
-   } );
-
-   [ 'export-dir', 'watch-dir' ].forEach( function( key ) {
-      if( key in argv ) {
-         args[ toCamelCase( key ) ] = resolvePossibleArrayArgument( argv, key );
-      }
-   } );
-
    args.rootDir = argv['root-dir'].replace( /\/$/, '' );
 
    return args;
@@ -60,34 +66,12 @@ function assembleConfiguration() {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function resolvePossibleArrayArgument( argv, key ) {
-   if( !argv[ key ] ) {
-      return [];
-   }
-
-   if( typeof argv[ key ] === 'string' ) {
-      return [ argv[ key ] ];
-   }
-   else {
-      // assume it is an array provided by optimist
-      return argv[ key ];
-   }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 function resolveArgv( optimist ) {
    var opt = optimist
-      .usage( 'Starts a development web server.\n' +
-      'Usage: $0 --root-dir=<path>\n' +
-      '       The export-dir argument can be given multiple times for different directories' )
+      .usage( 'Starts a development web server.\n Usage: $0 --root-dir=<path> --config-file=<path>' )
       .demand( [ 'root-dir' ] )
       .describe( 'root-dir', 'The root directory of the application' )
-      .describe( 'config-file', 'A JSON file to read the arguments from. Overridden by process args' )
-      .describe( 'entry-file', 'If given reloading code is injected in its body' )
-      .describe( 'watch-dir', 'A directory to watch for changes and reload <entry-file> if necessary' )
-      .describe( 'export-dir', 'A directory to serve as http://localhost:<port>/var/listing/<directory>' )
-      .describe( 'port', 'The port to start the server with' );
+      .describe( 'config-file', 'A JSON file for the application and plugin configuration.' );
 
    opt[ 'default' ]( { port: 8666 } );
 

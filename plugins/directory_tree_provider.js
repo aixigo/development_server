@@ -15,13 +15,13 @@
 /*jshint strict:false*//*global exports,console*/
 var Q = require( 'q' );
 var fs = require( 'fs' );
-var fsWatchTree = require( './../misc/multi_watch_tree' );
+var fsWatchTree = require( '../misc/multi_watch_tree' );
 
 exports.start = start;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function start( app, rootDir, exportDirs ) {
+function start( app, rootDir, exportUriPrefix, exportDirs ) {
    if( !exportDirs.length ) {
       console.log( 'no export dirs given' );
       return;
@@ -30,7 +30,7 @@ function start( app, rootDir, exportDirs ) {
    exportDirs.forEach( function( dir ) {
       dir = dir.replace( /^\//, '' );
       var widgetDirectoryTreeProvider = getInstance( rootDir, dir );
-      app.get( '/var/listing/' + dir.replace( /\//g, '_' ) + '.json', function( req, res ) {
+      app.get( exportUriPrefix + dir.replace( /\//g, '_' ) + '.json', function( req, res ) {
          res.json( widgetDirectoryTreeProvider.getTree() );
       } );
    } );

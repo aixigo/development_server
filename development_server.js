@@ -21,7 +21,13 @@ require( './misc/extended_amd_loader' ).config( {
       'lib/': '../../../includes/lib/'
    }
 } );
-require( '../../../includes/lib/json/extended_json' );
+
+if( require( 'fs' ).existsSync( __dirname + '/../../../includes/lib/json/extended_json.js' ) ) {
+   require( '../../../includes/lib/json/extended_json' );
+}
+else {
+   console.warn( 'JSON extension not available' );
+}
 
 var express = require( 'express' );
 var http = require( 'http' );
@@ -55,19 +61,34 @@ app.use( function( req, res, next ) {
 } );
 
 console.log( 'Started with pid ' + process.pid );
-console.log( 'Using root directory %s and port %s', rootDir, port );
+console.log( 'Using root directory %s. Listening on port %s', rootDir, port );
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// start helpers
+// start plugins
 
-directoryTreeProvider.start( app, rootDir, argumentResolver.get( 'exportDirs' ) );
+if( argumentResolver.get( 'plugins.directoryTreeProvider.enabled' ) ) {
+   var exportDirs = argumentResolver.get( 'plugins.directoryTreeProvider.exportDirs' );
+   var exportUriPrefix = argumentResolver.get( 'plugins.directoryTreeProvider.exportUriPrefix' );
 
-portalAngularDependencyProvider.start( app, rootDir, argumentResolver.get( 'flowFile' ), argumentResolver.get( 'angularDependenciesFile' ) );
-portalAngularDependencyProvider.createDependencyFile( function() {
-   console.log( 'Created %s', argumentResolver.get( 'angularDependenciesFile' ) );
-} );
+   directoryTreeProvider.start( app, rootDir, exportUriPrefix, exportDirs );
+}
 
-pageReloader.start( app, rootDir, argumentResolver.get( 'reloadFiles' ), argumentResolver.get( 'watchDirs' ) );
+if( argumentResolver.get( 'plugins.portalAngularDependencyProvider.enabled' ) ) {
+   var flowFile = argumentResolver.get( 'plugins.portalAngularDependencyProvider.flowFile' );
+   var angularDependenciesFile = argumentResolver.get( 'plugins.portalAngularDependencyProvider.angularDependenciesFile' );
+
+   portalAngularDependencyProvider.start( app, rootDir, flowFile, angularDependenciesFile );
+   portalAngularDependencyProvider.createDependencyFile( function() {
+      console.log( 'Created %s', angularDependenciesFile );
+   } );
+}
+
+if( argumentResolver.get( 'plugins.pageReloader.enabled' ) ) {
+   var reloadFiles = argumentResolver.get( 'plugins.pageReloader.reloadFiles' );
+   var watchDirs = argumentResolver.get( 'plugins.pageReloader.watchDirs' );
+
+   pageReloader.start( app, rootDir, reloadFiles, watchDirs );
+}
 
 staticServer.start( app, rootDir );
 

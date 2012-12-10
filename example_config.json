@@ -1,0 +1,26 @@
+{
+   "plugins": {
+
+      "pageReloader": {
+         "enabled": true,
+         "watchDirs": [
+            "my/sources"
+         ],
+         "reloadFiles": [
+            "index.html",
+            "index_debug.html",
+            "spec_runner.html"
+         ]
+      },
+
+      "directoryTreeProvider": {
+         "enabled": true,
+         "exportUriPrefix": "/var/listing/",
+         "exportDirs": [
+            "my/json/files"
+         ]
+      }
+   },
+
+   "port": 8666
+}
