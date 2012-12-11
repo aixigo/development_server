@@ -12,6 +12,8 @@ Start the server using the following command:
 
 Any other configuration takes place within the configuration file.
 
+See the `annotated_example_config.json` (which isn't meant to be a valid json file) for further information on what can be configured.
+
 License
 =======
 
