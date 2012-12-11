@@ -1,0 +1,47 @@
+{
+   "plugins": {
+
+      // Configures the plugin for automatic page refreshing.
+      "pageReloader": {
+
+         // Set this to false to disable the plugin.
+         "enabled": true,
+
+         // A list of directories (within the root-dir given as command line argument) to watch for changes.
+         // Watching is done via inotify. When there are many large directories to watch the number of
+         // available handlers might get exceeded. In this case either lower the number of watched directories
+         // or raise the per user limit of watchable inodes.
+         "watchDirs": [
+            "my/sources"
+         ],
+
+         // A list of files requested by the http client that should have the reloading code snippet injected.
+         // Reloading is done via socket.io.
+         "reloadFiles": [
+            "index.html",
+            "index_debug.html",
+            "spec_runner.html"
+         ]
+      },
+
+      // Configures the plugin that provides one or more directories as a static map.
+      "directoryTreeProvider": {
+
+         // Set this to false to disable the plugin.
+         "enabled": true,
+
+         // The uri fragment to prefix the exported dirs with when listening for requests to a mapping. If
+         // for example the listing for my/json/files should be fetched, than a GET to
+         // /var/listing/my/json/files will return the mapping for the according directory.
+         "exportUriPrefix": "/var/listing/",
+
+         // The directory to export a static map for.
+         "exportDirs": [
+            "my/json/files"
+         ]
+      }
+   },
+
+   // The port the server should listen on.
+   "port": 8666
+}
