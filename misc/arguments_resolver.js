@@ -63,7 +63,7 @@ function assembleConfiguration() {
    var argv = resolveArgv( optimist );
    var args = {};
    if( argv[ 'config-file' ] ) {
-      args = require( argv[ 'config-file' ] );
+      args = require( process.cwd() + '/' + argv[ 'config-file' ] );
    }
 
    args.rootDir = argv['root-dir'].replace( /\/$/, '' );
