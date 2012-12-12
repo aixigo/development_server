@@ -19,7 +19,7 @@
  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/*jshint strict:false*//*global exports*/
+/*jshint strict:false*//*global exports,process*/
 var optimist = require( 'optimist' );
 
 exports.get = get;
@@ -63,7 +63,11 @@ function assembleConfiguration() {
    var argv = resolveArgv( optimist );
    var args = {};
    if( argv[ 'config-file' ] ) {
-      args = require( process.cwd() + '/' + argv[ 'config-file' ] );
+      var path = argv[ 'config-file' ];
+      if( path.indexOf( '/' ) !== 0 ) {
+         path = process.cwd() + '/' + path;
+      }
+      args = require( path );
    }
 
    args.rootDir = argv['root-dir'].replace( /\/$/, '' );
