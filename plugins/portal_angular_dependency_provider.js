@@ -98,11 +98,19 @@ function writeFile( data ) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function ensureDirectory( dir ) {
+   if( !dir || !dir.length ) {
+      throw new Error( 'Cannot ensure empty directory' );
+   }
+
    if( fs.existsSync( dir ) ) {
       return;
    }
 
-   // NEEDS FIX C: this is not 'mkdir -p' but for now we can be sure 'var' exists and thus only 'static' needs to be created
+   var parentFolder = dir.replace( /\/[^\/]*$/, '' );
+   if( !fs.existsSync( parentFolder ) ) {
+      ensureDirectory( parentFolder );
+   }
+
    fs.mkdirSync( dir );
 }
 
