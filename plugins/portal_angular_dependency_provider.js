@@ -38,7 +38,7 @@ function start( app, webRootPath, flowFile, outputPath ) {
    outputPath_ = outputPath;
 
    app.get( '/' + outputPath_, function( req, res ) {
-      generateJavaScripteCode( webRootPath_, flowFile_, function( response ) {
+      generateJavaScriptCode( webRootPath_, flowFile_, function( response ) {
          res.set( 'Content-Type', 'application/javascript' );
          res.end( response );
 
@@ -51,7 +51,7 @@ function start( app, webRootPath, flowFile, outputPath ) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function createDependencyFile( callback ) {
-   generateJavaScripteCode( webRootPath_, flowFile_, function( response ) {
+   generateJavaScriptCode( webRootPath_, flowFile_, function( response ) {
       writeFile( response );
       callback();
    } );
@@ -59,18 +59,18 @@ function createDependencyFile( callback ) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function generateJavaScripteCode( webRootPath, flowFile, callback ) {
+function generateJavaScriptCode( webRootPath, flowFile, callback ) {
    var widgetCollector = require( webRootPath + '/includes/lib/portal_assembler/widget_collector' );
    widgetCollector.init( Q, httpClient() );
 
-   widgetCollector.gatherWidgets( webRootPath, webRootPath + flowFile, function( requires, modules ) {
+   widgetCollector.gatherWidgets( webRootPath, webRootPath + flowFile ).then( function( result ) {
 
       // NEEDS FIX B: extract these hardcoded values
-      requires.unshift( 'lib/angularjs/angular', 'portal/portal', 'portal/portal_dependencies' );
-      modules.unshift( 'portal', 'portal.dependencies' );
+      result.requires.unshift( 'lib/angularjs/angular', 'portal/portal', 'portal/portal_dependencies' );
+      result.modules.unshift( 'portal', 'portal.dependencies' );
 
-      var requireString = '[ \'' + requires.join( '\', \'' ) + '\' ]';
-      var modulesString = '[ \'' + modules.join( '\', \'' ) + '\' ]';
+      var requireString = '[ \'' + result.requires.join( '\', \'' ) + '\' ]';
+      var modulesString = '[ \'' + result.modules.join( '\', \'' ) + '\' ]';
 
       var response = 'require( ' + requireString + ', function( angular, portal ) {\n' +
          '\n' +
