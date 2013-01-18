@@ -81,6 +81,13 @@ function generateJavaScriptCode( webRootPath, flowFile, callback ) {
          '} );';
 
       callback( response );
+   }, function( err ) {
+      var errorMessage = 'There was an error while collecting all relevant angular dependencies:\\n\\n' + err;
+      callback( 'require( [], function() {\n' +
+         '   console.error( \'' + errorMessage + '\' );\n' +
+         '   alert( \'' + errorMessage + '\' );\n' +
+         '} );' );
+      console.error( errorMessage );
    } );
 }
 
@@ -119,18 +126,16 @@ function ensureDirectory( dir ) {
 function httpClient() {
    return {
       get: function( url ) {
-         var deferred = Q.defer();
-         fs.readFile( url, function( err, data ) {
-            if( err ) {
-               console.error( err );
-               deferred.reject( err );
-               return;
+         return Q.ncall( fs.readFile, fs, url ).then( function( data ) {
+            try {
+               return {
+                  data: JSON.parse( '' + data )
+               };
             }
-            deferred.resolve( {
-               data: JSON.parse( ''+data )
-            } );
+            catch( e ) {
+               throw new Error( 'Error: "' + e + '" in file "' + url + '"' );
+            }
          } );
-         return deferred.promise;
       }
    };
 }
