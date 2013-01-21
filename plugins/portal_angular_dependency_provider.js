@@ -81,8 +81,12 @@ function generateJavaScriptCode( webRootPath, flowFile, callback ) {
          '} );';
 
       callback( response );
-   }, function( err ) {
-      var errorMessage = 'There was an error while collecting all relevant angular dependencies:\\n\\n' + err;
+   }, function( e ) {
+      var errorMessage = 'There was an error while collecting all relevant angular dependencies:\\n\\n' + e;
+      if( e.stack ) {
+         errorMessage += '\\n\\nStack:\\n\\n' + e.stack;
+      }
+      errorMessage = errorMessage.replace( /'/g, '"' );
       callback( 'require( [], function() {\n' +
          '   console.error( \'' + errorMessage + '\' );\n' +
          '   alert( \'' + errorMessage + '\' );\n' +
@@ -126,7 +130,7 @@ function ensureDirectory( dir ) {
 function httpClient() {
    return {
       get: function( url ) {
-         return Q.ncall( fs.readFile, fs, url ).then( function( data ) {
+         return Q.ninvoke( fs, 'readFile', url ).then( function( data ) {
             try {
                return {
                   data: JSON.parse( '' + data )

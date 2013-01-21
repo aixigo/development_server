@@ -2,11 +2,11 @@
    "name": "development_server",
    "version": "0.0.1",
    "dependencies": {
-      "amd-loader": "=0.0.4",
-      "express": "=3.0.x",
-      "fs-watch-tree": "=0.2.x",
-      "optimist": "=0.3.x",
-      "q": "=0.8.x",
-      "socket.io": "=0.9.x"
+      "amd-loader": "0.0.4",
+      "express": "3.0.x",
+      "fs-watch-tree": "0.2.x",
+      "optimist": "0.3.x",
+      "q": "0.8.x",
+      "socket.io": "0.9.x"
    }
 }
