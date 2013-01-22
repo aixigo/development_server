@@ -8,7 +8,7 @@
          ],
          "reloadFiles": [
             "index.html",
-            "index_debug.html",
+            "debug.html",
             "spec_runner.html"
          ]
       },
