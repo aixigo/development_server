@@ -46,15 +46,13 @@ function watchTree( dir, callback ) {
 
 var queue = [];
 function enqueueCallbackCall( dir ) {
-   console.log( 'enqueue ' + dir );
+   
    if( queue.length === 0 ) {
       queue.push( dir );
 
       setTimeout( function() {
          var copy = queue.slice( 0 );
          queue = [];
-
-         console.log( copy );
 
          copy.forEach( function( dir ) {
             callCallbacksForDir( dir );
