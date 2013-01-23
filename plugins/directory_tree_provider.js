@@ -22,7 +22,7 @@
 /*jshint strict:false*//*global exports,console*/
 var Q = require( 'q' );
 var fs = require( 'fs' );
-var fsWatchTree = require( '../misc/multi_watch_tree' );
+var multiWatchTree = require( '../misc/multi_watch_tree' );
 
 exports.start = start;
 
@@ -63,7 +63,7 @@ function getInstance( rootDirectory, subDirectory ) {
    }
    updateFileTreeCache();
 
-   fsWatchTree.watchTree( watchedDirectory, updateFileTreeCache );
+   multiWatchTree.watchTree( watchedDirectory, updateFileTreeCache );
 
    return {
       getTree: function() {

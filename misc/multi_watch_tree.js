@@ -26,27 +26,110 @@ exports.watchTree = watchTree;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var dirsToCallbacks_ = {};
 function watchTree( dir, callback ) {
-   if( !( dir in dirsToCallbacks_ ) ) {
-
-      dirsToCallbacks_[ dir ] = [];
+   var callbacks = findCallbacksForDir( dir );
+   if( callbacks.length === 0 ) {
 
       var options = {
-         exclude: [ 'node_modules', /^\.git/, /(___jb_bak___)$/, /(___jb_old___)$/ ]
+         exclude: [ 'node_modules', /^\.git/, /(___jb_bak___|___jb_old___)$/ ]
       };
-      
+
       fsWatchTree.watchTree( dir, options, function( event ) {
-         dirsToCallbacks_[ dir ].forEach( function( cb ) {
-            try {
-               cb( event );
-            }
-            catch( e ) {
-               console.error( 'Exception while delivering fs-watch event: ', e );
-            }
-         } );
+         enqueueCallbackCall( dir );
       } );
    }
 
-   dirsToCallbacks_[ dir ].push( callback );
+   callbacks.push( callback );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var queue = [];
+function enqueueCallbackCall( dir ) {
+   console.log( 'enqueue ' + dir );
+   if( queue.length === 0 ) {
+      queue.push( dir );
+
+      setTimeout( function() {
+         var copy = queue.slice( 0 );
+         queue = [];
+
+         console.log( copy );
+
+         copy.forEach( function( dir ) {
+            callCallbacksForDir( dir );
+         } );
+      }, 100 );
+
+      return;
+   }
+
+   if( queue.filter( function( element ) { return element.indexOf( dir ) === 0; } ).length === 0 ) {
+      queue.push( dir );
+   }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var dirTree = {};
+function findCallbacksForDir( dir ) {
+   var fragments = dir.split( '/' ).slice( 1 );
+
+   var node = dirTree;
+   for( var i = 0; i < fragments.length; ++i ) {
+      var fragment = fragments[i];
+      if( !( fragment in node ) ) {
+         node[ fragment ] = {};
+      }
+      node = node[ fragment ];
+   }
+
+   if( !( '_callbacks' in node ) ) {
+      node._callbacks = [];
+   }
+
+   return node._callbacks;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function callCallbacksForDir( dir ) {
+   var fragments = dir.split( '/' ).slice( 1 );
+
+   var node = dirTree;
+   for( var i = 0; i < fragments.length; ++i ) {
+      var fragment = fragments[i];
+      if( !( fragment in node ) ) {
+         return;
+      }
+      node = node[ fragment ];
+   }
+
+   invokeRecursively( node );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function invokeRecursively( node ) {
+   Object.keys( node ).forEach( function( key ) {
+      if( key === '_callbacks' ) {
+         node[ key ].forEach( function( callback ) {
+            invokeCallback( callback );
+         } );
+      }
+      else  {
+         invokeRecursively( node[ key ] );
+      }
+   } );
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function invokeCallback( callback ) {
+   try {
+      callback();
+   }
+   catch( e ) {
+      console.error( 'Exception while delivering fs-watch event: ', e );
+   }
 }

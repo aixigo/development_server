@@ -20,7 +20,7 @@
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 /*jshint strict:false*//*global exports,console*/
-var fsWatchTree = require( './../misc/multi_watch_tree' );
+var multiWatchTree = require( './../misc/multi_watch_tree' );
 var fs = require( 'fs' );
 
 exports.start = start;
@@ -38,7 +38,7 @@ function start( app, rootDir, reloadFiles, watchedDirs ) {
    rootDir_ = rootDir;
 
    watchedDirs.forEach( function( dir ) {
-      fsWatchTree.watchTree( rootDir + '/' + dir.replace( /^\//, '' ), handleFileChanged );
+      multiWatchTree.watchTree( rootDir + '/' + dir.replace( /^\//, '' ), handleFileChanged );
    } );
 
    app.use( function( req, res, next ) {
@@ -63,7 +63,7 @@ function start( app, rootDir, reloadFiles, watchedDirs ) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var timeout_;
-function handleFileChanged( event ) {
+function handleFileChanged() {
    if( timeout_ ) {
       return;
    }
