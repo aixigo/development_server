@@ -38,7 +38,7 @@ function start( app, rootDir, reloadFiles, watchedDirs ) {
    rootDir_ = rootDir;
 
    watchedDirs.forEach( function( dir ) {
-      multiWatchTree.watchTree( rootDir + '/' + dir.replace( /^\//, '' ), handleFileChanged );
+      multiWatchTree.watchTree( rootDir + '/' + dir.replace( /^\//, '' ).replace( /\/$/, '' ), handleFileChanged );
    } );
 
    app.use( function( req, res, next ) {

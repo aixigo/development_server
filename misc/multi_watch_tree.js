@@ -19,12 +19,15 @@
  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/*jshint strict:false*//*global exports*/
+/*jshint strict:false*//*global exports,console*/
 var fsWatchTree = require( 'fs-watch-tree' );
 
 exports.watchTree = watchTree;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var changedDirectoryQueue = [];
+var directoryTree = {};
 
 function watchTree( dir, callback ) {
    var callbacks = findCallbacksForDir( dir );
@@ -35,7 +38,7 @@ function watchTree( dir, callback ) {
       };
 
       fsWatchTree.watchTree( dir, options, function( event ) {
-         enqueueCallbackCall( dir );
+         enqueueCallbackCall( event.name );
       } );
    }
 
@@ -44,15 +47,14 @@ function watchTree( dir, callback ) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var queue = [];
 function enqueueCallbackCall( dir ) {
    
-   if( queue.length === 0 ) {
-      queue.push( dir );
+   if( changedDirectoryQueue.length === 0 ) {
+      changedDirectoryQueue.push( dir );
 
       setTimeout( function() {
-         var copy = queue.slice( 0 );
-         queue = [];
+         var copy = changedDirectoryQueue.slice( 0 );
+         changedDirectoryQueue = [];
 
          copy.forEach( function( dir ) {
             callCallbacksForDir( dir );
@@ -62,18 +64,23 @@ function enqueueCallbackCall( dir ) {
       return;
    }
 
-   if( queue.filter( function( element ) { return element.indexOf( dir ) === 0; } ).length === 0 ) {
-      queue.push( dir );
+   var callbacksWithDirAsPrefix = changedDirectoryQueue.filter( function( element ) {
+      return element.indexOf( dir ) === 0;
+   } );
+
+   if( callbacksWithDirAsPrefix.length === 0 ) {
+      changedDirectoryQueue.push( dir );
    }
+   // else there is a directory queued, that has the directory that just changed as a prefix. Thus it is more
+   // specific and all more general callbacks will automatically get called
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var dirTree = {};
 function findCallbacksForDir( dir ) {
    var fragments = dir.split( '/' ).slice( 1 );
 
-   var node = dirTree;
+   var node = directoryTree;
    for( var i = 0; i < fragments.length; ++i ) {
       var fragment = fragments[i];
       if( !( fragment in node ) ) {
@@ -94,8 +101,13 @@ function findCallbacksForDir( dir ) {
 function callCallbacksForDir( dir ) {
    var fragments = dir.split( '/' ).slice( 1 );
 
-   var node = dirTree;
+   var node = directoryTree;
    for( var i = 0; i < fragments.length; ++i ) {
+
+      if( node._callbacks ) {
+         invokeCallbacksForNode( node );
+      }
+
       var fragment = fragments[i];
       if( !( fragment in node ) ) {
          return;
@@ -103,31 +115,20 @@ function callCallbacksForDir( dir ) {
       node = node[ fragment ];
    }
 
-   invokeRecursively( node );
+   if( node._callbacks ) {
+      invokeCallbacksForNode( node );
+   }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function invokeRecursively( node ) {
-   Object.keys( node ).forEach( function( key ) {
-      if( key === '_callbacks' ) {
-         node[ key ].forEach( function( callback ) {
-            invokeCallback( callback );
-         } );
+function invokeCallbacksForNode( node ) {
+   node._callbacks.forEach( function( callback ) {
+      try {
+         callback();
       }
-      else  {
-         invokeRecursively( node[ key ] );
+      catch( e ) {
+         console.error( 'Exception while delivering fs-watch event: ', e );
       }
    } );
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-function invokeCallback( callback ) {
-   try {
-      callback();
-   }
-   catch( e ) {
-      console.error( 'Exception while delivering fs-watch event: ', e );
-   }
 }
